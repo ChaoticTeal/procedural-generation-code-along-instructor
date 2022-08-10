@@ -11,6 +11,8 @@ let myGrid;
 // The number of weathering passes to make
 let weatheringPasses = 10;
 
+let generations = 1;
+
 function setup(){
     // These three colors are declared in grid.js and initialized here
     waterColor = color(0, 112, 236);
@@ -27,10 +29,14 @@ function setup(){
      *  are all defined in islands.js. We'll put our new work in here!
      */
     myGrid = initializeGrid(canvasDimensions, margin);
+    placeTrees(4, 15);
+    textSize(20);
 }
 
 function draw(){
     myGrid.display();
+    fill(0);
+    text(`Generation ${generations}`, 10, 25);
 }
 
 /**
@@ -38,15 +44,35 @@ function draw(){
  *      1. The function should take two parameters:
  *          a) minTrees - The minimum number of trees to place
  *          b) maxTrees - The maximum number of trees to place
- *      2. Declare a variable to track the number of placed trees
- *      3. Pick a random (X, y) coordinate within the grid
+ *      2. Pick a random (X, y) coordinate within the grid
  *          a) If the box at that location in the grid is water or a tree, pick again
- *          b) If it's land, make it a tree and add it to the total
- *      4. Put step 3 in a loop that ends after it runs maxTrees times
- *      5. For extra variety, add a random check after placing at least the
+ *          b) If it's land, make it a tree
+ *      3. Put step 3 in a loop that ends after it runs maxTrees times
+ *      4. For extra variety, add a random check after placing at least the
  *          minimum number of trees to exit the loop early
- *      6. Call the function in setup() to add trees to the grid!
+ *      5. Call the function in setup() to add trees to the grid!
  */
+
+function placeTrees(minTrees, maxTrees) {
+    let treeBox;
+    for(let i = 0; i < maxTrees; i++) {
+        let valid = false;
+        while(!valid){
+            treeX = randomNumberGenerator(myGrid.lowMargin, myGrid.highXMargin);
+            treeY = randomNumberGenerator(myGrid.lowMargin, myGrid.highYMargin);
+            treeBox = myGrid.boxArray[treeX][treeY];
+            valid = treeBox.currentState === BoxStates.land;
+        }
+        treeBox.setState(BoxStates.tree);
+        if(i >= minTrees) {
+            let currentStopChance = breakChance + 
+                ((1 - breakChance) / ((maxTrees - minTrees) - (i - minTrees)));
+            if(Math.random() < currentStopChance) {
+                break;
+            }
+        }
+    }
+}
 
 /**
  *  @TODO Write a function that spreads more trees on the grid each time it runs
@@ -61,8 +87,29 @@ function draw(){
  *          the number of neighboring trees
  */
 
+function spreadTrees(spreadChance) {
+    for(let x = myGrid.lowMargin; x < myGrid.highXMargin; x++) {
+        for(let y = myGrid.lowMargin; y < myGrid.highYMargin; y++) {
+            let currentBox = myGrid.boxArray[x][y];
+            if(currentBox.currentState === BoxStates.land) {
+                let neighbors = checkNeighbors(myGrid, x, y, BoxStates.tree);
+                if(Math.random() < neighbors * spreadChance) {
+                    currentBox.setState(BoxStates.tree);
+                }
+            }
+        }
+    }
+}
+
 /**
  *  @TODO Call the function to spread trees on the press of a key
  *      Note that our previous method of checking a pressed key runs
  *      every frame that the key is pressed, which isn't what we want!
  */
+
+function keyReleased() {
+    if(keyCode === 32) {
+        spreadTrees(0.15);
+        generations++;
+    }
+}
