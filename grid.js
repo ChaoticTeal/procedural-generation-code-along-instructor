@@ -3,6 +3,16 @@ let landColor;
 let treeColor;
 
 /**
+ *  Define a list of valid states for boxes
+ *  Use this instead of manually retyping strings to reduce errors
+ */
+const BoxStates = {
+    water : "water",
+    land : "land",
+    tree : "tree"
+}
+
+/**
  *  Holds a grid of boxes to display on the canvas
  */
  class Grid {
@@ -14,7 +24,7 @@ let treeColor;
     constructor(boxesPerRow, canvasDim, margin){
         // Initialize boxArray outside of the loop so we can push to it
         this.boxArray = [];
-        
+
         // Set width and height
         // Right now, these are the same, but using different variables helps future-proof
         this.width = boxesPerRow;
@@ -118,11 +128,11 @@ class Box {
      */
     getColorFromState() {
         switch(this.currentState){
-            case "water":
+            case BoxStates.water:
                 return waterColor;
-            case "land":
+            case BoxStates.land:
                 return landColor;
-            case "tree":
+            case BoxStates.tree:
                 return treeColor;
         }
     }
