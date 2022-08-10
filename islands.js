@@ -19,8 +19,10 @@ let breakChance = 0.1;
 let neighborChance = 0.05;
 // The minimum number of neighbors to allow
 let minNeighbors = 1.5;
-
+// Used for the pure randomization function
 let onChance = 0.2;
+// The grid we're working with
+let myGrid;
 
 /**
  * Runs all the necessary setup functions on the grid.
@@ -33,29 +35,25 @@ let onChance = 0.2;
  * @returns {Grid} The finished grid
  */
 function initializeGrid(canvasDimensions, margin) {
-    let myGrid = new Grid(boxes, canvasDimensions, margin);
+    myGrid = new Grid(boxes, canvasDimensions, margin);
 
     // Add islands to the grid
-    myGrid = generateIslands(myGrid);
+    generateIslands();
 
     // Weather the islands
-    myGrid = weatherGrid(
-        myGrid,
+    weatherGrid(
         weatheringPasses,
         BoxStates.water,
         BoxStates.land
     );
-    myGrid = weatherGrid(
-        myGrid,
+    weatherGrid(
         weatheringPasses,
         BoxStates.land,
         BoxStates.water
     );
 
     // Clean up stray boxes
-    myGrid = cleanGrid(myGrid);
-
-    return myGrid;
+    cleanGrid();
 }
 
 /**
@@ -64,12 +62,8 @@ function initializeGrid(canvasDimensions, margin) {
  * Note that these islands *will* overlap!
  * If we wanted to prevent this, we could save a list of islands and 
  * compare new ones to the existing ones as well as the main grid
- * 
- * @param {Grid} gridToModify The grid to generate islands in
- * 
- * @returns {Grid} The grid, now with islands
  */
- function generateIslands(gridToModify) {
+ function generateIslands() {
     // Loop until we have the maximum number of islands (or we break out early)
     for(let islands = 0; islands < islandProperties.maxCount; islands++) {
         // Define a new island object with upper left corner point and dimensions
@@ -83,11 +77,11 @@ function initializeGrid(canvasDimensions, margin) {
         // Generate random coordinates within the grid margins
         // Make sure there's room for at least a minimally sized island
         newIsland.cornerX = randomNumberGenerator(
-            gridToModify.lowMargin, 
-            gridToModify.highXMargin - islandProperties.minDim);
+            myGrid.lowMargin, 
+            myGrid.highXMargin - islandProperties.minDim);
         newIsland.cornerY = randomNumberGenerator(
-            gridToModify.lowMargin, 
-            gridToModify.highYMargin - islandProperties.minDim);
+            myGrid.lowMargin, 
+            myGrid.highYMargin - islandProperties.minDim);
 
         // Generate random dimenstions within the min/max
         // Since the RNG max is exclusive, we add 1 to maxDim here
@@ -99,17 +93,17 @@ function initializeGrid(canvasDimensions, margin) {
             islandProperties.maxDim + 1);
 
         // Make sure the island fits within the margins and resize if necessary
-        if(newIsland.cornerX + newIsland.width > gridToModify.highXMargin) {
-            newIsland.width = gridToModify.highXMargin - newIsland.cornerX;
+        if(newIsland.cornerX + newIsland.width > myGrid.highXMargin) {
+            newIsland.width = myGrid.highXMargin - newIsland.cornerX;
         }
-        if(newIsland.cornerY + newIsland.height > gridToModify.highYMargin) {
-            newIsland.height = gridToModify.highYMargin - newIsland.cornerY;
+        if(newIsland.cornerY + newIsland.height > myGrid.highYMargin) {
+            newIsland.height = myGrid.highYMargin - newIsland.cornerY;
         }
 
         // Loop through all the boxes within the newly-created island and set their states to land
         for(let x = newIsland.cornerX; x < newIsland.cornerX + newIsland.width; x++) {
             for(let y = newIsland.cornerY; y < newIsland.cornerY + newIsland.height; y++) {
-                gridToModify.boxArray[x][y].setState(BoxStates.land);
+                myGrid.boxArray[x][y].setState(BoxStates.land);
             }
         }
         
@@ -128,25 +122,20 @@ function initializeGrid(canvasDimensions, margin) {
             }
         }
     }
-
-    return gridToModify;
 }
 
 /**
  * Shifts box states based on neighboring tile states
  * 
- * @param {Grid} gridToModify The grid to weather
  * @param {number} passes The number of times to run inner and outer weathering loops
  * @param {string} checkedState The current state of the boxes we're looking for
  * @param {string} newState The state to compare and change boxes to
- * 
- * @returns {Grid} The weathered grid
  */
-function weatherGrid(gridToModify, passes, checkedState, newState) {
+function weatherGrid(passes, checkedState, newState) {
     // Push more land out along the edges of the islands
     for(let i = 0; i < passes; i++) {
         // Save the current grid so the step is fully working from the original grid state
-        let formerGrid = gridToModify;
+        let formerGrid = myGrid;
         // Loop through *formerGrid*
         for(let x = formerGrid.lowMargin; x < formerGrid.highXMargin; x++) {
             for(let y = formerGrid.lowMargin; y < formerGrid.highYMargin; y++) {
@@ -156,26 +145,22 @@ function weatherGrid(gridToModify, passes, checkedState, newState) {
                     let neighbors = checkNeighbors(formerGrid, x, y, newState);
                     // ...and randomly change them to the target state
                     if(Math.random() < neighborChance * neighbors) {
-                        gridToModify.boxArray[x][y].setState(newState);
+                        myGrid.boxArray[x][y].setState(newState);
                     }
                 }
             }
         }
     }
-    return gridToModify;
 }
 
 /**
  * Loops through a grid to eliminate stray blocks
- * 
- * @param {Grid} gridToModify The grid to clean
- * @returns The cleaned grid
  */
-function cleanGrid(gridToModify) {
-    for(let x = gridToModify.lowMargin; x < gridToModify.highXMargin; x++) {
-        for(let y = gridToModify.lowMargin; y < gridToModify.highYMargin; y++) {
-            let currentBox = gridToModify.boxArray[x][y];
-            let neighbors = checkNeighbors(gridToModify, x, y, currentBox.currentState);
+function cleanGrid() {
+    for(let x = myGrid.lowMargin; x < myGrid.highXMargin; x++) {
+        for(let y = myGrid.lowMargin; y < myGrid.highYMargin; y++) {
+            let currentBox = myGrid.boxArray[x][y];
+            let neighbors = checkNeighbors(myGrid, x, y, currentBox.currentState);
             if(neighbors < minNeighbors) {
                 switch(currentBox.currentState) {
                     case BoxStates.land:
@@ -188,28 +173,21 @@ function cleanGrid(gridToModify) {
             }
         }
     }
-    return gridToModify;
 }
 
 /**
  * Loops through the given grid and randomly sets boxes to land
  * If we run this, we can see that there's not a lot of "procedure" here--it's just rolling a die a lot
- * 
- * @param {Grid} gridToModify The grid to randomly populate
- * 
- * @returns {Grid} The randomly populated grid
  */
-function randomizeGrid(gridToModify) {
-    let modifiedGrid = gridToModify;
+function randomizeGrid() {
     // Loop through each Box in the Grid and randomly assign some of the boxes as land
-    for(let x = gridToModify.lowMargin; x < modifiedGrid.highXMargin; x++){
-        for(let y = gridToModify.lowMargin; y < modifiedGrid.highYMargin; y++){
+    for(let x = myGrid.lowMargin; x < myGrid.highXMargin; x++){
+        for(let y = myGrid.lowMargin; y < myGrid.highYMargin; y++){
             if(Math.random() < onChance){
-                modifiedGrid.boxArray[x][y].setState(BoxStates.land);
+                myGrid.boxArray[x][y].setState(BoxStates.land);
             }
         }
     }
-    return modifiedGrid;
 }
 
 /**
