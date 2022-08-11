@@ -5,8 +5,6 @@ let canvasDimensions = 500;
 let canvas;
 // The number of water boxes we want around the outside of whatever we generate
 let margin = 2;
-// A Grid we'll initialize in setup()
-let myGrid;
 
 // The number of weathering passes to make
 let weatheringPasses = 10;
@@ -28,7 +26,7 @@ function setup(){
      *  @NOTE The initializeGrid() function, along with the functions it calls,
      *  are all defined in islands.js. We'll put our new work in here!
      */
-    myGrid = initializeGrid(canvasDimensions, margin);
+    initializeGrid(canvasDimensions, margin);
     placeTrees(4, 15);
     textSize(20);
 }
@@ -92,7 +90,7 @@ function spreadTrees(spreadChance) {
         for(let y = myGrid.lowMargin; y < myGrid.highYMargin; y++) {
             let currentBox = myGrid.boxArray[x][y];
             if(currentBox.currentState === BoxStates.land) {
-                let neighbors = checkNeighbors(myGrid, x, y, BoxStates.tree);
+                let neighbors = checkNeighbors(myGrid.statesArray(), x, y, BoxStates.tree);
                 if(Math.random() < neighbors * spreadChance) {
                     currentBox.setState(BoxStates.tree);
                 }

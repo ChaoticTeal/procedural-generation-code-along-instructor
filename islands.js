@@ -135,12 +135,12 @@ function weatherGrid(passes, checkedState, newState) {
     // Push more land out along the edges of the islands
     for(let i = 0; i < passes; i++) {
         // Save the current grid so the step is fully working from the original grid state
-        let formerGrid = myGrid;
+        let formerGrid = myGrid.statesArray();
         // Loop through *formerGrid*
-        for(let x = formerGrid.lowMargin; x < formerGrid.highXMargin; x++) {
-            for(let y = formerGrid.lowMargin; y < formerGrid.highYMargin; y++) {
+        for(let x = myGrid.lowMargin; x < myGrid.highXMargin; x++) {
+            for(let y = myGrid.lowMargin; y < myGrid.highYMargin; y++) {
                 // If the current box in the formerGrid has the state we're looking for...
-                if(formerGrid.boxArray[x][y].currentState === checkedState) {
+                if(formerGrid[x][y] === checkedState) {
                     // ...Check how many neighbors have the target state...
                     let neighbors = checkNeighbors(formerGrid, x, y, newState);
                     // ...and randomly change them to the target state
@@ -160,7 +160,7 @@ function cleanGrid() {
     for(let x = myGrid.lowMargin; x < myGrid.highXMargin; x++) {
         for(let y = myGrid.lowMargin; y < myGrid.highYMargin; y++) {
             let currentBox = myGrid.boxArray[x][y];
-            let neighbors = checkNeighbors(myGrid, x, y, currentBox.currentState);
+            let neighbors = checkNeighbors(myGrid.statesArray(), x, y, currentBox.currentState);
             if(neighbors < minNeighbors) {
                 switch(currentBox.currentState) {
                     case BoxStates.land:
@@ -194,29 +194,29 @@ function randomizeGrid() {
  * Checks the cells immediately adjacent to one particular cell in the given grid
  * Totals the number of neighbors with the given state (diagonal neighbors count as half)
  * 
- * @param {Grid} gridToCheck The grid to evaluate neighbors in
+ * @param {Grid} arrayToCheck The grid to evaluate neighbors in
  * @param {number} x The x-position of the cell in question
  * @param {number} y The y-position of the cell in question
  * @param {string} checkState The state we're looking for in neighbors 
  * 
  * @returns {number} The number of matching neighbors
  */
-function checkNeighbors(gridToCheck, x, y, checkState){
+function checkNeighbors(arrayToCheck, x, y, checkState){
     let neighbors = 0;
     // Loop through the three columns centered on our cell
     for(let a = -1; a < 2; a++){
         // Make sure we're checking columns within the grid
-        if(x + a < 0 || x + a >= gridToCheck.width){
+        if(x + a < 0 || x + a >= myGrid.width){
         } else {
             // Loop through the three rows centered on our cell
             for(let b = -1; b < 2; b++){ 
                 // Again, make sure we're staying within the grid
                 // Also make sure we don't count our starting tile
-                if(y + b < 0 || y + b >= gridToCheck.height){
+                if(y + b < 0 || y + b >= myGrid.height){
                 } else if(a === 0 && b === 0){
                 } else {
                     // Check the current state of the neighboring cell
-                    if(gridToCheck.boxArray[x + a][y + b].currentState === checkState){
+                    if(arrayToCheck[x + a][y + b] === checkState){
                         // If the absolute values match, we're looking at a diagonal neighbor, which should have less influence
                         if(Math.abs(a) === Math.abs(b)) {
                             neighbors += 0.5;
